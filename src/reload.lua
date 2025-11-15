@@ -4,12 +4,15 @@
 -- 	so only assign to values or define things here.
 
 import "modules/biomeShortener.lua"
+import "modules/statScaler.lua"
 import "modules/runManager.lua"
+import "modules/opTraitsForTesting.lua"
 FlushRegistry()
 InitShorteners()
+InitStatHooks()
 
 -- Indicate endless run
-RunStartVoicelines = RegisterValues(GlobalVoiceLines, "StartNewRunVoiceLines")
+RunStartVoicelines, SurfaceRunStartVoicelines = RegisterValues(GlobalVoiceLines, { "StartNewRunVoiceLines", "StartSurfaceRunVoiceLines" })
 EndlessRunStartVoicelines = {
     {
         BreakIfPlayed = true,
@@ -20,45 +23,34 @@ EndlessRunStartVoicelines = {
     }
 }
 RunStartVoicelines.set(EndlessRunStartVoicelines)
+SurfaceRunStartVoicelines.set(EndlessRunStartVoicelines)
 
-InsaneDamageName = PrefixGlobal("InsaneDamage")
-InsaneDamageMultiplier = {
-    Name = InsaneDamageName,
-    InheritFrom = { "BaseTrait", "EarthBoon" },
-	Icon = "Boon_Hera_37",
-    AddOutgoingDamageModifiers = {
-        GlobalMultiplier = 100
-    }
-}
-ProcessDataInheritance(InsaneDamageMultiplier, TraitData)
-TraitData[InsaneDamageName] = InsaneDamageMultiplier
+local statScaleFunction = function (routeDepth)
+    return 10 ^ (routeDepth / 5)
+end
 
 function StartEndlessRun(base, usee, args)
+    if not config.Enabled then return base(usee, args) end
     --args.StartingBiome = "P" -- faster first run for testing
     value = base(usee, args)
     InitEndlessRun()
-    ApplyShortening(GetRouteDepth())
-    AddTraitToHero({ TraitData = InsaneDamageMultiplier })
-    for i = 1, 51, 1 do
-        AddTraitToHero({
-            TraitName = "AirEssence",
-            ReportValues = { ReportedTraitName = "TraitName" }
-        })
-    end
-    AddTraitToHero({ TraitName = "ElementalDodgeBoon" })
     return value
 end
 
 function CheckEndlessSave(base, ...)
+    if not config.Enabled then return base(...) end
     result = base(...)
-    if CurrentRun ~= nil and GetRouteDepth() ~= nil then
+    if CurrentRun ~= nil and GetRouteDepth() ~= nil and CurrentEndlessRun == nil then
         InitEndlessRun(true)
-        ApplyShortening(GetRouteDepth())
+        local routeDepth = GetRouteDepth()
+        ApplyShortening(routeDepth)
+        ScaleStats(statScaleFunction(routeDepth))
     end
     return result
 end
 
 function EndlessPylonObjective(base, room, args)
+    if GetRouteDepth() == nil then return base(room, args) end
     args = args or {}
 
 	if not IsGameStateEligible( room, NamedRequirementsData.PylonObjectiveRevealed ) then
@@ -93,12 +85,15 @@ local tartarusEndFunction, tartarusEndArgs, tartarusEndSkip, tartarusEndEvents =
 ---@type TrackedValue
 local summitEndFunction, summitEndArgs, summitEndSkip, summitEndEvents1, summitEndEvents2 = nil, nil, nil, nil, nil
 function ConnectEndToOtherStart(base, currentRun, door)
+    if not config.Enabled then return base(currentRun, door) end
     if CurrentRun.CurrentRoom.Name == "I_Boss01" then
         if not NextRoute() then
-            if tartarusEndEvents ~= nil then tartarusEndEvents.set(tartarusEndEvents.original) end
+            RestoreDefaults()
             return base(currentRun, door)
         end
-        ApplyShortening(GetRouteDepth())
+        local newDepth = GetRouteDepth()
+        ApplyShortening(newDepth)
+        ScaleStats(statScaleFunction(newDepth))
 
         tartarusEndFunction, tartarusEndArgs, tartarusEndSkip = RegisterValues(currentRun.CurrentRoom, { "ExitFunctionName", "ExitFunctionArgs", "SkipLoadNextMap" })
         if tartarusEndEvents == nil then
@@ -112,11 +107,12 @@ function ConnectEndToOtherStart(base, currentRun, door)
         door.Room = CreateRoom(RoomData.N_Opening01)
     elseif CurrentRun.CurrentRoom.Name == "Q_Boss01" or CurrentRun.CurrentRoom.Name == "Q_Boss02" then
         if not NextRoute() then
-            if summitEndEvents1 ~= nil then summitEndEvents1.set(summitEndEvents1.original) end
-            if summitEndEvents2 ~= nil then summitEndEvents2.set(summitEndEvents2.original) end
+            RestoreDefaults()
             return base(currentRun, door)
         end
-        ApplyShortening(GetRouteDepth())
+        local newDepth = GetRouteDepth()
+        ApplyShortening(newDepth)
+        ScaleStats(statScaleFunction(newDepth))
         
         summitEndFunction, summitEndArgs, summitEndSkip = RegisterValues(currentRun.CurrentRoom, { "ExitFunctionName", "ExitFunctionArgs", "SkipLoadNextMap" })
         if summitEndEvents1 == nil or summitEndEvents2 == nil then
@@ -132,4 +128,10 @@ function ConnectEndToOtherStart(base, currentRun, door)
         door.Room = CreateRoom(ChooseStartingRoom(currentRun, { StartingBiome = "F" }))
     end
     return base(currentRun, door)
+end
+
+function PreventVictoryScreen(base, ...)
+    if GetRouteDepth() == nil then return base(...) end
+    if (CurrentRun.MaxGodsPerRun or 4) < NumberOfOlympians then return end
+    return base(...)
 end

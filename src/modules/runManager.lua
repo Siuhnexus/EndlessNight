@@ -1,11 +1,8 @@
 local RouteDepthKey = PrefixGlobal("RouteDepth")
-local NumberOfOlympians = 9
-local InitialGodPool = 4
-CurrentEndlessRun = {
-    EncountersOccurredCache = {},
-    RoomsEntered = {},
-    SoulPylon = 0
-}
+NumberOfOlympians = 9
+InitialGodPool = 4
+---@type { EncountersOccurredCache: table, RoomsEntered: table, SoulPylon: number }
+CurrentEndlessRun = nil
 
 function InitEndlessRun(saved)
     saved = saved or false
@@ -15,7 +12,8 @@ function InitEndlessRun(saved)
         SoulPylon = 0
     }
     if saved then return end
-    CurrentRun[RouteDepthKey] = 0
+    CurrentRun[RouteDepthKey] = 100 -- testing of enemy scaling
+    log("RunManager: Endless run started", LogLevel.Success)
 end
 
 function GetRouteDepth()
@@ -61,4 +59,6 @@ function EndEndlessRun()
     CurrentRun.EncountersOccurredCache = CurrentEndlessRun.EncountersOccurredCache
     CurrentRun.RoomsEntered = CurrentEndlessRun.RoomsEntered
     CurrentRun.SpawnRecord.SoulPylon = CurrentEndlessRun.SoulPylon
+
+    CurrentEndlessRun = nil
 end

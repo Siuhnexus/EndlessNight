@@ -17,3 +17,7 @@ end)
 modutil.mod.Path.Wrap("LeaveRoom", function(base, ...)
     return ConnectEndToOtherStart(base, ...)
 end)
+
+modutil.mod.Path.Wrap("OpenRunClearScreen", function(base, ...)
+    return PreventVictoryScreen(base, ...)
+end)
