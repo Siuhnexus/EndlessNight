@@ -9,4 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- First version of the mod!
+- Endless running until the god pool is full
+- Shorter biome with each finished route
+- Enemy health and armor increase after each route clear
