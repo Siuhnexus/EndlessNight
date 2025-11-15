@@ -12,7 +12,7 @@ function InitEndlessRun(saved)
         SoulPylon = 0
     }
     if saved then return end
-    CurrentRun[RouteDepthKey] = 100 -- testing of enemy scaling
+    CurrentRun[RouteDepthKey] = 0
     log("RunManager: Endless run started", LogLevel.Success)
 end
 

@@ -4,6 +4,8 @@ This mod allows you to start an endless run. If it is enabled, you will be trans
 
 This means that there will be 6 routes in total and your endless run will end on the route you did NOT choose when leaving the crossroads. Keep this in mind especially if you did not finish the story yet, as the story will progress only once per endless run in the ending route (Surface if you chose Underworld, Underworld if you chose Surface).
 
+When you start a new run with this mod enabled, you should hear a voiceline indicating that.
+
 ## Installation
 
 Install this mod using r2modman from Thunderstore. Details can be found [here](https://github.com/ebkr/r2modmanPlus?tab=readme-ov-file#first-time-installing).
