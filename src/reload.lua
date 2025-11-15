@@ -29,15 +29,14 @@ local statScaleFunction = function (routeDepth)
 end
 
 function StartEndlessRun(base, usee, args)
-    if not config.Enabled then return base(usee, args) end
-    --args.StartingBiome = "P" -- faster first run for testing
+    if not config.enabled then return base(usee, args) end
     value = base(usee, args)
     InitEndlessRun()
     return value
 end
 
 function CheckEndlessSave(base, ...)
-    if not config.Enabled then return base(...) end
+    if not config.enabled then return base(...) end
     result = base(...)
     if CurrentRun ~= nil and GetRouteDepth() ~= nil and CurrentEndlessRun == nil then
         InitEndlessRun(true)
@@ -84,7 +83,7 @@ local tartarusEndFunction, tartarusEndArgs, tartarusEndSkip, tartarusEndEvents =
 ---@type TrackedValue
 local summitEndFunction, summitEndArgs, summitEndSkip, summitEndEvents1, summitEndEvents2 = nil, nil, nil, nil, nil
 function ConnectEndToOtherStart(base, currentRun, door)
-    if not config.Enabled then return base(currentRun, door) end
+    if not config.enabled then return base(currentRun, door) end
     if CurrentRun.CurrentRoom.Name == "I_Boss01" then
         if not NextRoute() then
             RestoreDefaults()

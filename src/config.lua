@@ -1,5 +1,4 @@
 return {
-    version = 0;
-    enabled = true;
-    loglevel = 2;
+    enabled = true,
+    loglevel = 2
 }
