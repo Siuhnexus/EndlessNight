@@ -4,7 +4,7 @@ This mod allows you to start an endless run. If it is enabled, you will be trans
 
 This means that there will be 6 routes in total and your endless run will end on the route you did NOT choose when leaving the crossroads. Keep this in mind especially if you did not finish the story yet, as the story will progress only once per endless run in the ending route (Surface if you chose Underworld, Underworld if you chose Surface).
 
-When you start a new run with this mod enabled, you should hear a voiceline indicating that.
+When you start a new run with this mod enabled, you should hear Nyx saying "My will be done".
 
 ## Installation
 
@@ -35,4 +35,4 @@ Please create an issue ([click here](https://github.com/Siuhnexus/EndlessNight/i
 - A detailed and clear description of what you were doing and what exactly happened.
 - Any steps to reproduce the bug/crash, if possible.
 - (Optional, but very helpful) A video showing the bug, if possible.
-- The `Hades II.log` file located at `C:\Users\<Your Username>\Saved Games\Hades II` (I am unsure of the location on other operating systems)
+- The `LogOutput.log` file located at `C:\Program Files (x86)\Steam\steamapps\common\Hades II\Ship\ReturnOfModding` (I am unsure of the location on other operating systems)
