@@ -6,7 +6,7 @@
 import "modules/biomeShortener.lua"
 import "modules/statScaler.lua"
 import "modules/runManager.lua"
-import "modules/opTraitsForTesting.lua"
+
 FlushRegistry()
 InitShorteners()
 InitStatHooks()
