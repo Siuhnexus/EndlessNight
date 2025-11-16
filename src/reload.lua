@@ -6,9 +6,24 @@
 import "modules/biomeShortener.lua"
 import "modules/statScaler.lua"
 import "modules/runManager.lua"
+import "modules/opTraitsForTesting.lua"
 FlushRegistry()
 InitShorteners()
 InitStatHooks()
+
+function RunHistoryPatch()
+    for _, runData in ipairs(GameState.RunHistory) do
+        if runData.KeepsakeCache ~= nil and #runData.KeepsakeCache > 4 then
+            log("Run history with too many keepsakes detected", LogLevel.Warning)
+            local shortenedKeepsakes = {}
+            for i = 1, 4 do
+                shortenedKeepsakes[i] = runData.KeepsakeCache[i]
+            end
+            runData.KeepsakeCache = shortenedKeepsakes
+            log("Keepsakes limited to first four", LogLevel.Success)
+        end
+    end
+end
 
 -- Indicate endless run
 RunStartVoicelines, SurfaceRunStartVoicelines = RegisterValues(GlobalVoiceLines, { "StartNewRunVoiceLines", "StartSurfaceRunVoiceLines" })
@@ -36,6 +51,8 @@ function StartEndlessRun(base, usee, args)
 end
 
 function CheckEndlessSave(base, ...)
+    -- Check if run history contains runs that are not displayable without cutting keepsakes
+    RunHistoryPatch()
     if not config.enabled then return base(...) end
     result = base(...)
     if CurrentRun ~= nil and GetRouteDepth() ~= nil and CurrentEndlessRun == nil then
@@ -131,5 +148,10 @@ end
 function PreventVictoryScreen(base, ...)
     if GetRouteDepth() == nil then return base(...) end
     if (CurrentRun.MaxGodsPerRun or 4) < NumberOfOlympians then return end
+    return base(...)
+end
+
+function HeroDying(base, ...)
+    EndEndlessRun()
     return base(...)
 end

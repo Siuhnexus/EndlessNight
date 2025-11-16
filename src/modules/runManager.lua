@@ -60,5 +60,12 @@ function EndEndlessRun()
     CurrentRun.RoomsEntered = CurrentEndlessRun.RoomsEntered
     CurrentRun.SpawnRecord.SoulPylon = CurrentEndlessRun.SoulPylon
 
+    -- Limit cached keepsakes to four to not crash the game when reviewing old runs
+    local shortenedKeepsakes = {}
+    for i = 1, 4 do
+        shortenedKeepsakes[i] = CurrentRun.KeepsakeCache[i]
+    end
+    CurrentRun.KeepsakeCache = shortenedKeepsakes
+
     CurrentEndlessRun = nil
 end

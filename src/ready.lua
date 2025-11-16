@@ -21,3 +21,7 @@ end)
 modutil.mod.Path.Wrap("OpenRunClearScreen", function(base, ...)
     return PreventVictoryScreen(base, ...)
 end)
+
+modutil.mod.Path.Wrap("KillHero", function(base, ...)
+    return HeroDying(base, ...)
+end)
