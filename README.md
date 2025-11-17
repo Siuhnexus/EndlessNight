@@ -35,4 +35,4 @@ Please create an issue ([click here](https://github.com/Siuhnexus/EndlessNight/i
 - A detailed and clear description of what you were doing and what exactly happened.
 - Any steps to reproduce the bug/crash, if possible.
 - (Optional, but very helpful) A video showing the bug, if possible.
-- The `LogOutput.log` file located at `C:\Program Files (x86)\Steam\steamapps\common\Hades II\Ship\ReturnOfModding` (I am unsure of the location on other operating systems)
+- The `LogOutput.log` file located at `C:\Users\<your user>\AppData\Roaming\r2modmanPlus-local\HadesII\profiles\<your profile>\ReturnOfModding` if you are using R2Modman or `C:\Program Files (x86)\Steam\steamapps\common\Hades II\Ship\ReturnOfModding` if you installed the mods manually (I am unsure of the location on other operating systems)
