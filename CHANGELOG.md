@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Medea appearing multiple times
+- Crash at run end for post true ending saves
+
 ## [1.0.4] - 2025-11-16
+
+### Fixed
+
+- Remove code used for testing
 
 ## [1.0.3] - 2025-11-16
 
@@ -16,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Game crash when trying to review old endless runs
 
 ## [1.0.2] - 2025-11-15
+
+### Fixed
+
+- Remove code used for testing
 
 ## [1.0.1] - 2025-11-15
 
