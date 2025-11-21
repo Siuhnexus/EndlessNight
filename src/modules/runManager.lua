@@ -55,6 +55,9 @@ function NextRoute()
 end
 
 function EndEndlessRun()
+    -- If no endless run is active or it has already been cleared for ending we don't need to do anything
+    if CurrentEndlessRun == nil then return end
+
     -- Reapply tables to CurrentRun for statistics
     CurrentRun.EncountersOccurredCache = CurrentEndlessRun.EncountersOccurredCache
     CurrentRun.RoomsEntered = CurrentEndlessRun.RoomsEntered
