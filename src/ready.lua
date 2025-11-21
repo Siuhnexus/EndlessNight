@@ -25,3 +25,7 @@ end)
 modutil.mod.Path.Wrap("KillHero", function(base, ...)
     return HeroDying(base, ...)
 end)
+
+modutil.mod.Path.Context.Wrap("ChooseAvailableN_HubDoors", function(room, args)
+    ControlMedeaEncounterCorrectly(room, args)
+end)

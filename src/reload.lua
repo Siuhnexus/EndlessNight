@@ -55,7 +55,7 @@ function CheckEndlessSave(base, ...)
     RunHistoryPatch()
     if not config.enabled then return base(...) end
     result = base(...)
-    if CurrentRun ~= nil and GetRouteDepth() ~= nil and CurrentEndlessRun == nil then
+    if RunIsEndlessRun() and CurrentEndlessRun == nil then
         InitEndlessRun(true)
         local routeDepth = GetRouteDepth()
         ApplyShortening(routeDepth)
@@ -93,6 +93,28 @@ function EndlessPylonObjective(base, room, args)
 	if numPylons >= ControlValues.NeededPylons then
 		MarkObjectiveComplete("BiomeNPylons")
 	end
+end
+
+function ControlMedeaEncounterCorrectly(room, args)
+    if RunIsEndlessRun() and not IsRoomEligible(CurrentRun, RoomData.N_Story01) then
+        log("Removing Medea encounter as it has already appeared", LogLevel.Success)
+        modutil.mod.Path.Wrap("GetAllKeys", function(base, dict)
+            if dict == nil then
+                return
+            end
+
+            local keys = {}
+            for k, v in pairs( dict ) do
+                if not (v == "N_Story01") then
+                    table.insert( keys, k )
+                else
+                    log("Medea encounter appeared in predetermined rooms table", LogLevel.Success)
+                    room.UnavailableDoors[k] = true
+                end
+            end
+            return keys
+        end)
+    end
 end
 
 ---@type TrackedValue
