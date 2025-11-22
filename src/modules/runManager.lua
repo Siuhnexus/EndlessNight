@@ -16,6 +16,10 @@ function InitEndlessRun(saved)
     log("RunManager: Endless run started", LogLevel.Success)
 end
 
+function RunIsEndlessRun()
+    return CurrentRun ~= nil and CurrentRun[RouteDepthKey] ~= nil
+end
+
 function GetRouteDepth()
     return CurrentRun[RouteDepthKey]
 end
