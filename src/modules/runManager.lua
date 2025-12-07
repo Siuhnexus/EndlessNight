@@ -1,71 +1,71 @@
-local RouteDepthKey = PrefixGlobal("RouteDepth")
 NumberOfOlympians = 9
 InitialGodPool = 4
----@type { EncountersOccurredCache: table, RoomsEntered: table, SoulPylon: number }
-CurrentEndlessRun = nil
+---@alias EndlessData { Holdout: { EncountersOccurredCache: table, RoomsEntered: table, SoulPylon: number }, Depth: number }
 
-function InitEndlessRun(saved)
-    saved = saved or false
-    CurrentEndlessRun = {
+
+---Inits the endless run storage
+---@param BountyRunData EndlessData
+function InitEndlessRun(BountyRunData)
+    BountyRunData.Holdout = {
         EncountersOccurredCache = {},
         RoomsEntered = {},
         SoulPylon = 0
     }
-    if saved then return end
-    CurrentRun[RouteDepthKey] = 0
+    BountyRunData.Depth = 0
+    CurrentRun.MaxGodsPerRun = InitialGodPool
     log("RunManager: Endless run started", LogLevel.Success)
 end
 
-function RunIsEndlessRun()
-    return CurrentRun ~= nil and CurrentRun[RouteDepthKey] ~= nil
-end
-
-function GetRouteDepth()
-    return CurrentRun[RouteDepthKey]
+---Extracts the current endless depth from bounty storage
+---@param BountyRunData EndlessData
+---@return number
+function GetRouteDepth(BountyRunData)
+    return BountyRunData.Depth
 end
 
 ---To be called after beating the final boss of a route to prepare for another route
----@return boolean Finish Indicating whether the run should be stopped
-function NextRoute()
+---@param BountyRunData EndlessData
+function NextRoute(BountyRunData)
     -- Clear encounter cache to allow for choosing a random starting room in Erebus
     for key, value in pairs(CurrentRun.EncountersOccurredCache) do
-        CurrentEndlessRun.EncountersOccurredCache[key] = (CurrentEndlessRun.EncountersOccurredCache[key] or 0) + value
+        BountyRunData.Holdout.EncountersOccurredCache[key] = (BountyRunData.Holdout.EncountersOccurredCache[key] or 0) + value
     end
     CurrentRun.EncountersOccurredCache = {}
 
     -- Clear rooms entered log to allow for different minibosses in repeated routes and to fix issues with the shop forcing in the fields of mourning
     for key, value in pairs(CurrentRun.RoomsEntered) do
-        CurrentEndlessRun.RoomsEntered[key] = (CurrentEndlessRun.RoomsEntered[key] or 0) + value
+        BountyRunData.Holdout.RoomsEntered[key] = (BountyRunData.Holdout.RoomsEntered[key] or 0) + value
     end
     CurrentRun.RoomsEntered = {}
 
     -- Reset soul pylon spawn count
-    CurrentEndlessRun.SoulPylon = CurrentEndlessRun.SoulPylon + (CurrentRun.SpawnRecord.SoulPylon or 0)
+    BountyRunData.Holdout.SoulPylon = BountyRunData.Holdout.SoulPylon + (CurrentRun.SpawnRecord.SoulPylon or 0)
     CurrentRun.SpawnRecord.SoulPylon = 0
     -- Reopen closed Ephyra doors
     CurrentRun.ClosedDoors = {}
 
     -- Increase route depth for shortening and max god limit
-    CurrentRun[RouteDepthKey] = CurrentRun[RouteDepthKey] + 1
+    BountyRunData.Depth = BountyRunData.Depth + 1
 
     -- Increase god pool
-    CurrentRun.MaxGodsPerRun = InitialGodPool + GetRouteDepth()
-
-    if CurrentRun.MaxGodsPerRun > NumberOfOlympians then
-        EndEndlessRun()
-        return false
-    end
-    return true
+    CurrentRun.MaxGodsPerRun = InitialGodPool + GetRouteDepth(BountyRunData)
 end
 
-function EndEndlessRun()
-    -- If no endless run is active or it has already been cleared for ending we don't need to do anything
-    if CurrentEndlessRun == nil then return end
+---Determines whether the current endless run should end after the current route is cleared
+---@return boolean ShouldEnd Indicates whether the run should end
+function ShouldEndEndlessRun()
+    return CurrentRun.MaxGodsPerRun >= NumberOfOlympians
+end
+
+---Combines the data from previous routes with the current one
+---@param BountyRunData EndlessData
+function EndEndlessRun(BountyRunData)
+    NextRoute(BountyRunData)
 
     -- Reapply tables to CurrentRun for statistics
-    CurrentRun.EncountersOccurredCache = CurrentEndlessRun.EncountersOccurredCache
-    CurrentRun.RoomsEntered = CurrentEndlessRun.RoomsEntered
-    CurrentRun.SpawnRecord.SoulPylon = CurrentEndlessRun.SoulPylon
+    CurrentRun.EncountersOccurredCache = BountyRunData.Holdout.EncountersOccurredCache
+    CurrentRun.RoomsEntered = BountyRunData.Holdout.RoomsEntered
+    CurrentRun.SpawnRecord.SoulPylon = BountyRunData.Holdout.SoulPylon
 
     -- Limit cached keepsakes to four to not crash the game when reviewing old runs
     local shortenedKeepsakes = {}
@@ -73,6 +73,4 @@ function EndEndlessRun()
         shortenedKeepsakes[i] = CurrentRun.KeepsakeCache[i]
     end
     CurrentRun.KeepsakeCache = shortenedKeepsakes
-
-    CurrentEndlessRun = nil
 end

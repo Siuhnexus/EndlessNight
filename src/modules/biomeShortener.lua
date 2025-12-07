@@ -1,6 +1,6 @@
 ---@alias Biome "F"|"G"|"H"|"I"|"N"|"O"|"P"|"Q"
 ---@alias BiomeShortener { set: (fun(value: integer)), max: integer }
----@alias BiomeRegisterer fun(biome: Biome): BiomeShortener | nil
+---@alias BiomeRegisterer fun(biome: Biome, RegisterValues: TrackedValueRegisterer): BiomeShortener | nil
 
 ---@type Biome[]
 Biomes = { "F", "G", "H", "I", "N", "O", "P", "Q" }
@@ -19,7 +19,7 @@ BiomeNames = {
 
 ---Shortens biomes based on the maxdepth spawn of the final shop
 ---@type BiomeRegisterer
-local function RegularRegisterer(biome)
+local function RegularRegisterer(biome, RegisterValues)
     local roomNameStart = biome .. "_" .. "PreBoss"
     for name, data in pairs(RoomData) do
         if string.find(name, roomNameStart) == nil then goto next end
@@ -31,7 +31,7 @@ local function RegularRegisterer(biome)
                 forceMax.set(value)
                 log("BiomeShortener: Run depth of final shop for " .. BiomeNames[biome] .. " was set to " .. value, LogLevel.Success)
             end,
-            max = forceMin.original
+            max = forceMin.get()
         } end
         ::next::
     end
@@ -41,7 +41,7 @@ end
 
 ---Shortens Mourning Fields based on the sum of cleared locations
 ---@type BiomeRegisterer
-local function FieldsRegisterer(biome)
+local function FieldsRegisterer(biome, RegisterValues)
     local roomNameStart = biome .. "_" .. "PreBoss"
     for name, data in pairs(RoomData) do
         if string.find(name, roomNameStart) == nil then goto next end
@@ -53,7 +53,7 @@ local function FieldsRegisterer(biome)
                 force.set(value)
                 log("BiomeShortener: Run depth of final shop for " .. BiomeNames[biome] .. " was set to " .. value, LogLevel.Success)
             end,
-            max = force.original
+            max = force.get()
         } end
         ::next::
     end
@@ -63,7 +63,7 @@ end
 
 ---Shortens Tartarus biome by changing the amount of clockwork goals
 ---@type BiomeRegisterer
-local function ClockworkRegisterer(biome)
+local function ClockworkRegisterer(biome, RegisterValues)
     local roomNameStart = biome .. "_" .. "Intro"
     for name, data in pairs(RoomData) do
         if string.find(name, roomNameStart) == nil then goto next end
@@ -76,13 +76,15 @@ local function ClockworkRegisterer(biome)
 
             do return {
                 set = function (value)
+                    goals.reset()
+                    local dist = goals.get() - value
                     goals.set(value)
-                    local dist = goals.original - value
-                    nonMin.set(math.max(nonMin.original - dist, 1))
-                    nonMax.set(math.max(nonMax.original - 2 * dist, 1))
+                    nonMin.reset()
+                    nonMin.set(math.max(nonMin.get() - dist, 1))
+                    nonMax.set(math.max(nonMax.get() - 2 * dist, 1))
                     log("BiomeShortener: Clockwork goals for " .. BiomeNames[biome] .. " were set to " .. value, LogLevel.Success)
                 end,
-                max = goals.original
+                max = goals.get()
             } end
             ::next2::
         end
@@ -98,7 +100,7 @@ ControlValues = {
 
 ---Shortens Ephyra by reducing required pylons
 ---@type BiomeRegisterer
-local function PylonRegisterer(biome)
+local function PylonRegisterer(biome, RegisterValues)
     local roomNameStart = biome .. "_" .. "Hub"
     for name, data in pairs(RoomData) do
         if string.find(name, roomNameStart) == nil then goto next end
@@ -118,7 +120,7 @@ local function PylonRegisterer(biome)
 
         -- Disable barrier and lock exits of hub appropriately when first entering the hub
         local threaded = RegisterValues(data, "ThreadedEvents")
-        local newThreaded = ShallowCopyTable(threaded.original) or {}
+        local newThreaded = ShallowCopyTable(threaded.get()) or {}
         for _, event in ipairs(data.PostCombatReloadThreadedEvents) do
             table.insert(newThreaded, event)
             local path = nil
@@ -145,15 +147,17 @@ local function PylonRegisterer(biome)
 
         do return {
             set = function (value)
-                pylons.set(value)
                 exit.set(value)
-                local dist = pylons.original - value
+                pylons.reset()
+                local dist = pylons.get() - value
+                pylons.set(value)
                 for _, var in ipairs(pylonDependent) do
-                    var.set(var.original - dist)
+                    var.reset()
+                    var.set(var.get() - dist)
                 end
                 log("BiomeShortener: Soul pylon amount for " .. BiomeNames[biome] .. " was set to " .. value, LogLevel.Success)
             end,
-            max = pylons.original
+            max = pylons.get()
         } end
         ::next::
     end
@@ -163,7 +167,7 @@ end
 
 ---Shortens The Summit based on the depth spawn of the final shop
 ---@type BiomeRegisterer
-local function SummitRegisterer(biome)
+local function SummitRegisterer(biome, RegisterValues)
     local roomNameStart = biome .. "_" .. "PreBoss"
     for name, data in pairs(RoomData) do
         if string.find(name, roomNameStart) == nil then goto next end
@@ -174,7 +178,7 @@ local function SummitRegisterer(biome)
                 force.set(value)
                 log("BiomeShortener: Run depth of final shop for " .. BiomeNames[biome] .. " was set to " .. value, LogLevel.Success)
             end,
-            max = force.original
+            max = force.get()
         } end
         ::next::
     end
@@ -230,11 +234,12 @@ local BiomeShorteningInfo = {
 local BiomeShorteners = {}
 
 ---Initializes hooks into game tables for biome shortening
-function InitShorteners()
+---@param RegisterValues TrackedValueRegisterer
+function InitShorteners(RegisterValues)
     for _, biome in ipairs(Biomes) do
         local info = BiomeShorteningInfo[biome]
         if info.registerer ~= nil then
-            BiomeShorteners[biome] = info.registerer(biome)
+            BiomeShorteners[biome] = info.registerer(biome, RegisterValues)
             log("BiomeShortener: Registerer for " .. BiomeNames[biome] .. " was successfully executed", LogLevel.Success)
         else
             log("BiomeShortener: Registerer for " .. BiomeNames[biome] .. " was not found", LogLevel.Warning)
@@ -252,4 +257,8 @@ function ApplyShortening(runDepth)
             shortener.set(newValue)
         end
     end
+end
+
+function FlushShorteners()
+    BiomeShorteners = {}
 end

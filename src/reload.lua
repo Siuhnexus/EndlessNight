@@ -7,11 +7,10 @@ import "modules/biomeShortener.lua"
 import "modules/statScaler.lua"
 import "modules/runManager.lua"
 
-FlushRegistry()
-InitShorteners()
-InitStatHooks()
-
+patchExecuted = false
 function RunHistoryPatch()
+    if patchExecuted then return end
+    patchExecuted = true
     for _, runData in ipairs(GameState.RunHistory) do
         if runData.KeepsakeCache ~= nil and #runData.KeepsakeCache > 4 then
             log("Run history with too many keepsakes detected", LogLevel.Warning)
@@ -25,47 +24,8 @@ function RunHistoryPatch()
     end
 end
 
--- Indicate endless run
-RunStartVoicelines, SurfaceRunStartVoicelines = RegisterValues(GlobalVoiceLines, { "StartNewRunVoiceLines", "StartSurfaceRunVoiceLines" })
-EndlessRunStartVoicelines = {
-    {
-        BreakIfPlayed = true,
-		PreLineWait = 0.3,
-		UsePlayerSource = true,
-		ThreadName = "RoomThread",
-        { Cue = "/VO/Nyx_0006", Text = "{#Emph}...My will be done...", Source = { LineHistoryName = "NPC_NyxVoice_01", SubtitleColor = Color.NyxVoice }, }
-    }
-}
-RunStartVoicelines.set(EndlessRunStartVoicelines)
-SurfaceRunStartVoicelines.set(EndlessRunStartVoicelines)
-
-local statScaleFunction = function (routeDepth)
-    return 10 ^ (routeDepth / 5)
-end
-
-function StartEndlessRun(base, usee, args)
-    if not config.enabled then return base(usee, args) end
-    value = base(usee, args)
-    InitEndlessRun()
-    return value
-end
-
-function CheckEndlessSave(base, ...)
-    -- Check if run history contains runs that are not displayable without cutting keepsakes
-    RunHistoryPatch()
-    if not config.enabled then return base(...) end
-    result = base(...)
-    if RunIsEndlessRun() and CurrentEndlessRun == nil then
-        InitEndlessRun(true)
-        local routeDepth = GetRouteDepth()
-        ApplyShortening(routeDepth)
-        ScaleStats(statScaleFunction(routeDepth))
-    end
-    return result
-end
-
 function EndlessPylonObjective(base, room, args)
-    if GetRouteDepth() == nil then return base(room, args) end
+    if not EndlessRunActive then return base(room, args) end
     args = args or {}
 
 	if not IsGameStateEligible( room, NamedRequirementsData.PylonObjectiveRevealed ) then
@@ -96,7 +56,7 @@ function EndlessPylonObjective(base, room, args)
 end
 
 function ControlMedeaEncounterCorrectly(room, args)
-    if RunIsEndlessRun() and not IsRoomEligible(CurrentRun, RoomData.N_Story01) then
+    if EndlessRunActive and not IsRoomEligible(CurrentRun, RoomData.N_Story01) then
         log("Removing Medea encounter as it has already appeared", LogLevel.Success)
         modutil.mod.Path.Wrap("GetAllKeys", function(base, dict)
             if dict == nil then
@@ -117,63 +77,59 @@ function ControlMedeaEncounterCorrectly(room, args)
     end
 end
 
----@type TrackedValue
-local tartarusEndFunction, tartarusEndArgs, tartarusEndSkip, tartarusEndEvents = nil, nil, nil, nil
----@type TrackedValue
-local summitEndFunction, summitEndArgs, summitEndSkip, summitEndEvents1, summitEndEvents2 = nil, nil, nil, nil, nil
-function ConnectEndToOtherStart(base, currentRun, door)
-    if not config.enabled then return base(currentRun, door) end
-    if CurrentRun.CurrentRoom.Name == "I_Boss01" then
-        if not NextRoute() then
-            RestoreDefaults()
-            return base(currentRun, door)
-        end
-        local newDepth = GetRouteDepth()
-        ApplyShortening(newDepth)
-        ScaleStats(statScaleFunction(newDepth))
+---Sets up all overrides to make endless running possible
+---@param RegisterValues TrackedValueRegisterer
+function EndlessGameTableOverrides(RegisterValues)
+    InitShorteners(RegisterValues)
+    InitStatHooks(RegisterValues)
+    tartarusEndFunction, tartarusEndArgs, tartarusEndSkip, tartarusEndEvents = RegisterValues(RoomData["I_Boss01"], { "ExitFunctionName", "ExitFunctionArgs", "SkipLoadNextMap", "LeavePostPresentationEvents" })
+    tartarusEndFunction.set(nil)
+    tartarusEndArgs.set(nil)
+    tartarusEndSkip.set(nil)
+    tartarusEndEvents.set(nil)
+    summitEndFunction1, summitEndArgs1, summitEndSkip1, summitEndEvents1 = RegisterValues(RoomData["Q_Boss01"], { "ExitFunctionName", "ExitFunctionArgs", "SkipLoadNextMap", "LeavePostPresentationEvents" })
+    summitEndFunction2, summitEndArgs2, summitEndSkip2, summitEndEvents2 = RegisterValues(RoomData["Q_Boss02"], { "ExitFunctionName", "ExitFunctionArgs", "SkipLoadNextMap", "LeavePostPresentationEvents" })
+    summitEndFunction1.set(nil)
+    summitEndArgs1.set(nil)
+    summitEndSkip1.set(nil)
+    summitEndEvents1.set(nil)
+    summitEndFunction2.set(nil)
+    summitEndArgs2.set(nil)
+    summitEndSkip2.set(nil)
+    summitEndEvents2.set(nil)
+end
 
-        tartarusEndFunction, tartarusEndArgs, tartarusEndSkip = RegisterValues(currentRun.CurrentRoom, { "ExitFunctionName", "ExitFunctionArgs", "SkipLoadNextMap" })
-        if tartarusEndEvents == nil then
-            tartarusEndEvents = RegisterValues(RoomData["I_Boss01"], "LeavePostPresentationEvents")
-        end
-
-        tartarusEndFunction.set(nil)
-        tartarusEndArgs.set(nil)
-        tartarusEndSkip.set(false)
-        tartarusEndEvents.set(nil)
-        door.Room = CreateRoom(RoomData.N_Opening01)
-    elseif CurrentRun.CurrentRoom.Name == "Q_Boss01" or CurrentRun.CurrentRoom.Name == "Q_Boss02" then
-        if not NextRoute() then
-            RestoreDefaults()
-            return base(currentRun, door)
-        end
-        local newDepth = GetRouteDepth()
-        ApplyShortening(newDepth)
-        ScaleStats(statScaleFunction(newDepth))
-        
-        summitEndFunction, summitEndArgs, summitEndSkip = RegisterValues(currentRun.CurrentRoom, { "ExitFunctionName", "ExitFunctionArgs", "SkipLoadNextMap" })
-        if summitEndEvents1 == nil or summitEndEvents2 == nil then
-            summitEndEvents1 = RegisterValues(RoomData["Q_Boss01"], "LeavePostPresentationEvents")
-            summitEndEvents2 = RegisterValues(RoomData["Q_Boss02"], "LeavePostPresentationEvents")
-        end
-
-        summitEndFunction.set(nil)
-        summitEndArgs.set(nil)
-        summitEndSkip.set(false)
-        summitEndEvents1.set(nil)
-        summitEndEvents2.set(nil)
-        door.Room = CreateRoom(ChooseStartingRoom(currentRun, { StartingBiome = "F" }))
+function SetupEndlessRun(BountyRunData, FromSave, scaler)
+    if FromSave then
+        local routeDepth = GetRouteDepth(BountyRunData)
+        ApplyShortening(routeDepth)
+        ScaleStats(scaler(routeDepth))
+    else
+        InitEndlessRun(BountyRunData)
     end
-    return base(currentRun, door)
+    AddTraitToHero({ TraitName = prefix("InsaneDamage") }) -- TEMP
 end
 
-function PreventVictoryScreen(base, ...)
-    if GetRouteDepth() == nil then return base(...) end
-    if (CurrentRun.MaxGodsPerRun or 4) < NumberOfOlympians then return end
-    return base(...)
+function ConnectEndToStart(BountyRunData, RoomName, scaler, mix)
+    if RoomName ~= "I_Boss01" and RoomName ~= "Q_Boss01" and RoomName ~= "Q_Boss02" then return end
+    
+    NextRoute(BountyRunData)
+    local newDepth = GetRouteDepth(BountyRunData)
+    ApplyShortening(newDepth)
+    ScaleStats(scaler(newDepth))
+
+    underworld = RoomName == "I_Boss01"
+    if mix then underworld = not underworld end
+
+    if underworld then
+        return ChooseStartingRoom(CurrentRun, { StartingBiome = "F" })
+    else
+        return "N_Opening01"
+    end
 end
 
-function HeroDying(base, ...)
-    EndEndlessRun()
-    return base(...)
+function Dying(BountyRunData)
+    EndEndlessRun(BountyRunData)
+    FlushShorteners()
+    FlushStatHooks()
 end

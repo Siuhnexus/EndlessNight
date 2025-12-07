@@ -2,7 +2,9 @@
 local statHooks = {}
 
 ---Hooks into game tables to prepare stat scaling
-function InitStatHooks()
+---@param RegisterValues TrackedValueRegisterer
+function InitStatHooks(RegisterValues)
+    statHooks = {}
     for _, data in pairs(EnemyData) do
         local keysToAlter = {}
 
@@ -43,6 +45,12 @@ end
 ---@param scaleRelativeToOriginal number
 function ScaleStats(scaleRelativeToOriginal)
     for _, hook in ipairs(statHooks) do
-        hook.set(hook.original * scaleRelativeToOriginal)
+        hook.reset()
+        hook.set(hook.get() * scaleRelativeToOriginal)
     end
+    log("Scaled stats to " .. scaleRelativeToOriginal .. "x", LogLevel.Success)
+end
+
+function FlushStatHooks()
+    statHooks = {}
 end

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Variants for only underworld and only surface endless runs
+
+### Changed
+
+- Moved all runs into the pitch-black stone using the BountyAPI mod
+
+### Removed
+
+- Special voiceline for starting an endless run as it is no longer needed
+
 ## [1.0.6] - 2025-11-22
 
 ### Fixed

@@ -1,10 +1,6 @@
 # Endless Night
 
-This mod allows you to start an endless run. If it is enabled, you will be transported into the other route (Underworld/Surface) after each successful route clear. Afterwards, all enemies get healthier and biomes get shorter. Also, one more Olympian God can appear. This continues until every Olympian can appear, which marks the beginning of your last route.
-
-This means that there will be 6 routes in total and your endless run will end on the route you did NOT choose when leaving the crossroads. Keep this in mind especially if you did not finish the story yet, as the story will progress only once per endless run in the ending route (Surface if you chose Underworld, Underworld if you chose Surface).
-
-When you start a new run with this mod enabled, you should hear Nyx saying "My will be done".
+This mod allows you to do an endless run. If it is enabled, you should be able to see new challenges in your pitch-black stone. Endless runs can be Underworld only, Surface only or mixed (starting with the Underworld route). After each successful route clear you will be transported into the beginning of the (other) route. Afterwards, all enemies get healthier and biomes get shorter. Also, one more Olympian God can appear. This continues until every Olympian can appear, which marks the beginning of your last route. Thus, there will be 6 routes in total.
 
 ## Installation
 
@@ -14,7 +10,7 @@ Install this mod using r2modman from Thunderstore. Details can be found [here](h
 
 **NOTE**: When using Hell2Modding, the configuration file is located in the ReturnOfModding/config folder of your r2modman data folder under the name Siuhnexus-EndlessNight.cfg.
 
-The mod comes with a config.lua file that allows you to change certain settings. The following settings are available:
+The mod comes with a config file that allows you to change certain settings. The following settings are available:
 
 - `enabled`: Set to `true` to enable the mod, set to `false` to disable the mod. Default: `true`.
 - `loglevel`: Prints out all message types up to this value. The different types are `1` (Error), `2` (Warning), `3` (Success), `4` (Info). Default: 2 (prints errors and warnings).
@@ -28,7 +24,7 @@ The mod comes with a config.lua file that allows you to change certain settings.
 
 - Balance certain boons (e. g. Chant offered by Chaos) for endless runs
 - Increase amount of hex upgrades to benefit more from Paths of Stars in endless runs
-- Put endless runs into the pitch-black stone and add different configurations (only one route, stronger enemy scaling, etc.)
+- Add different configurations/difficulties (increasing fear, enemy scaling etc.)
 
 ## I found a bug or my game crashed, what do I do?
 Please create an issue ([click here](https://github.com/Siuhnexus/EndlessNight/issues/new)) with the following details:
