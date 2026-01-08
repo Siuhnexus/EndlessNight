@@ -82,21 +82,21 @@ end
 function EndlessGameTableOverrides(RegisterValues)
     InitShorteners(RegisterValues)
     InitStatHooks(RegisterValues)
-    tartarusEndFunction, tartarusEndArgs, tartarusEndSkip, tartarusEndEvents = RegisterValues(RoomData["I_Boss01"], { "ExitFunctionName", "ExitFunctionArgs", "SkipLoadNextMap", "LeavePostPresentationEvents" })
-    tartarusEndFunction.set(nil)
-    tartarusEndArgs.set(nil)
-    tartarusEndSkip.set(nil)
-    tartarusEndEvents.set(nil)
-    summitEndFunction1, summitEndArgs1, summitEndSkip1, summitEndEvents1 = RegisterValues(RoomData["Q_Boss01"], { "ExitFunctionName", "ExitFunctionArgs", "SkipLoadNextMap", "LeavePostPresentationEvents" })
-    summitEndFunction2, summitEndArgs2, summitEndSkip2, summitEndEvents2 = RegisterValues(RoomData["Q_Boss02"], { "ExitFunctionName", "ExitFunctionArgs", "SkipLoadNextMap", "LeavePostPresentationEvents" })
-    summitEndFunction1.set(nil)
-    summitEndArgs1.set(nil)
-    summitEndSkip1.set(nil)
-    summitEndEvents1.set(nil)
-    summitEndFunction2.set(nil)
-    summitEndArgs2.set(nil)
-    summitEndSkip2.set(nil)
-    summitEndEvents2.set(nil)
+
+    for _, name in ipairs({ "I_Boss01", "Q_Boss01", "Q_Boss02" }) do
+        endFunction, endArgs, endSkip, endEvents, overwriteSelf = RegisterValues(RoomData[name], { "ExitFunctionName", "ExitFunctionArgs", "SkipLoadNextMap", "LeavePostPresentationEvents", "UnthreadedEvents" })
+        endFunction.set(nil)
+        endArgs.set(nil)
+        endSkip.set(nil)
+        endEvents.set(nil)
+        -- Prevent self override when story is completed
+        toFilter = RoomData[name].UnthreadedEvents
+        filtered = {}
+        for i, event in ipairs(toFilter) do
+            if event.FunctionName ~= "OverwriteSelf" then table.insert(filtered, event) end
+        end
+        overwriteSelf.set(filtered)
+    end
 end
 
 function SetupEndlessRun(BountyRunData, FromSave, scaler)
@@ -107,7 +107,6 @@ function SetupEndlessRun(BountyRunData, FromSave, scaler)
     else
         InitEndlessRun(BountyRunData)
     end
-    AddTraitToHero({ TraitName = prefix("InsaneDamage") }) -- TEMP
 end
 
 function ConnectEndToStart(BountyRunData, RoomName, scaler, mix)
