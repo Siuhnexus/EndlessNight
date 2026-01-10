@@ -43,6 +43,13 @@ function NextRoute(BountyRunData)
     CurrentRun.SpawnRecord.SoulPylon = 0
     -- Reopen closed Ephyra doors
     CurrentRun.ClosedDoors = {}
+    -- Remove Ephyra hub from RoomHistory to regenerate it for the next run
+    log("Removing Ephyra hub from history", LogLevel.Success)
+    for i = #CurrentRun.RoomHistory, 1, -1 do
+        if CurrentRun.RoomHistory[i].Name == "N_Hub" then
+            table.remove(CurrentRun.RoomHistory, i)
+        end
+    end
 
     -- Increase route depth for shortening and max god limit
     BountyRunData.Depth = BountyRunData.Depth + 1

@@ -24,6 +24,8 @@ function RunHistoryPatch()
     end
 end
 
+EndlessRunActive = false
+
 function EndlessPylonObjective(base, room, args)
     if not EndlessRunActive then return base(room, args) end
     args = args or {}
@@ -56,7 +58,7 @@ function EndlessPylonObjective(base, room, args)
 end
 
 function ControlMedeaEncounterCorrectly(room, args)
-    if EndlessRunActive and not IsRoomEligible(CurrentRun, RoomData.N_Story01) then
+    if EndlessRunActive and not IsRoomEligible(CurrentRun, CurrentRun.CurrentRoom, RoomData.N_Story01) then
         log("Removing Medea encounter as it has already appeared", LogLevel.Success)
         modutil.mod.Path.Wrap("GetAllKeys", function(base, dict)
             if dict == nil then
@@ -107,6 +109,7 @@ function SetupEndlessRun(BountyRunData, FromSave, scaler)
     else
         InitEndlessRun(BountyRunData)
     end
+    EndlessRunActive = true
 end
 
 function ConnectEndToStart(BountyRunData, RoomName, scaler, mix)
@@ -131,4 +134,5 @@ function Dying(BountyRunData)
     EndEndlessRun(BountyRunData)
     FlushShorteners()
     FlushStatHooks()
+    EndlessRunActive = false
 end
